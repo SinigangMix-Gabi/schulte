@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schulte Table</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #fff;
+            color: #111;
+            font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 16px 60px;
+        }
+
+        /* ─── Header ─── */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.78rem;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        /* ─── Controls row ─── */
+        .controls {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            width: 100%;
+            max-width: 520px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .ctrl-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+        }
+
+        .size-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .size-btn {
+            background: #fff;
+            border: 1.5px solid #ddd;
+            color: #555;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.12s;
+        }
+
+        .size-btn:hover {
+            border-color: #111;
+            color: #111;
+        }
+
+        .size-btn.active {
+            background: #111;
+            border-color: #111;
+            color: #fff;
+        }
+
+        #timer {
+            font-size: 1.65rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.02em;
+            color: #111;
+        }
+
+        /* ─── Stats ─── */
+        .stats {
+            display: flex;
+            gap: 28px;
+            width: 100%;
+            max-width: 520px;
+            margin-bottom: 14px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .stat-label {
+            font-size: 0.63rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        #mistake-count {
+            color: #111;
+        }
+
+        #mistake-count.has-mistakes {
+            color: #c00;
+        }
+
+        /* ─── Grid ─── */
+        .board-wrap {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .board-aspect {
+            width: 100%;
+            aspect-ratio: 1;
+        }
+
+        #grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            gap: 5px;
+        }
+
+        .cell {
+            background: #f6f6f6;
+            border: 1.5px solid #e4e4e4;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.75rem, 2.8vw, 1.5rem);
+            font-weight: 700;
+            cursor: pointer;
+            color: #111;
+            user-select: none;
+            transition: background 0.1s, border-color 0.1s, transform 0.08s;
+        }
+
+        .cell:hover:not([data-clicked]):not(.wrong-flash) {
+            background: #ebebeb;
+            border-color: #aaa;
+            transform: scale(0.96);
+        }
+
+        .cell.correct-color {
+            background: #edf7ed;
+            border-color: #3a8a3a;
+            color: #3a8a3a;
+            cursor: default;
+            animation: pop 0.2s ease;
+        }
+
+        .cell.cell-hidden {
+            visibility: hidden;
+            cursor: default;
+        }
+
+        .cell[data-clicked] {
+            cursor: default;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .cell.wrong-flash {
+            background: #fdeaea;
+            border-color: #c00;
+            color: #c00;
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        /* ─── Progress bar ─── */
+        .progress-track {
+            width: 100%;
+            max-width: 520px;
+            height: 3px;
+            background: #eee;
+            border-radius: 99px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #111;
+            border-radius: 99px;
+            transition: width 0.2s ease;
+        }
+
+        /* ─── Game Mode ─── */
+        .mode-section {
+            width: 100%;
+            max-width: 520px;
+            margin-top: 16px;
+            margin-bottom: 10px;
+        }
+
+        .section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .mode-cards {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mode-card {
+            flex: 1;
+            padding: 11px 10px 10px;
+            border: 1.5px solid #e4e4e4;
+            border-radius: 7px;
+            background: #f6f6f6;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .mode-card:hover {
+            border-color: #aaa;
+            background: #efefef;
+        }
+
+        .mode-card.active {
+            border-color: #111;
+            background: #111;
+        }
+
+        .mode-card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #111;
+        }
+
+        .mode-card.active .mode-card-title {
+            color: #fff;
+        }
+
+        .mode-card-desc {
+            font-size: 0.63rem;
+            color: #999;
+            line-height: 1.4;
+        }
+
+        .mode-card.active .mode-card-desc {
+            color: #aaa;
+        }
+
+        /* ─── Options ─── */
+        .options-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 520px;
+            margin-bottom: 14px;
+            margin-top: 10px;
+        }
+
+        .opt-toggle {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 12px;
+            border: 1.5px solid #e4e4e4;
+            border-radius: 7px;
+            background: #f6f6f6;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 0.15s;
+        }
+
+        .opt-toggle:hover {
+            border-color: #bbb;
+        }
+
+        .opt-toggle.on {
+            border-color: #111;
+        }
+
+        .opt-toggle-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .pill {
+            position: relative;
+            width: 32px;
+            height: 18px;
+            background: #ddd;
+            border-radius: 99px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .pill::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .opt-toggle.on .pill {
+            background: #111;
+        }
+
+        .opt-toggle.on .pill::after {
+            transform: translateX(14px);
+        }
+
+        /* ─── Best Times ─── */
+        .best-times {
+            width: 100%;
+            max-width: 520px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .best-times-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .best-times-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+        }
+
+        .clear-btn {
+            background: none;
+            border: 1px solid #ddd;
+            color: #aaa;
+            font-size: 0.62rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+
+        .clear-btn:hover {
+            border-color: #c00;
+            color: #c00;
+        }
+
+        .best-times-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .bt-card {
+            flex: 1;
+            background: #f6f6f6;
+            border: 1.5px solid #e4e4e4;
+            border-radius: 6px;
+            padding: 8px 6px;
+            text-align: center;
+        }
+
+        .bt-card.current {
+            background: #111;
+            border-color: #111;
+        }
+
+        .bt-size {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #777;
+            margin-bottom: 4px;
+        }
+
+        .bt-card.current .bt-size {
+            color: #aaa;
+        }
+
+        .bt-time {
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #111;
+        }
+
+        .bt-card.current .bt-time {
+            color: #fff;
+        }
+
+        .bt-time.empty {
+            color: #ccc;
+        }
+
+        /* ─── Modal ─── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            /* FIX: padding so modal never touches screen edges */
+            padding: 16px;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: #fff;
+            border: 2px solid #111;
+            border-radius: 10px;
+            padding: 36px 36px 32px;
+            text-align: center;
+            /* FIX: wider to fit chart for large grids, max-height + scroll */
+            max-width: 480px;
+            width: 100%;
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            transform: scale(0.94);
+            transition: transform 0.22s;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .modal-sub {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 24px;
+        }
+
+        .modal-stats {
+            display: flex;
+            justify-content: center;
+            gap: 36px;
+            margin-bottom: 20px;
+        }
+
+        .m-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .m-stat-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+        }
+
+        .m-stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* FIX: pb-badge takes no height when hidden so it doesn't create dead space */
+        .pb-badge {
+            display: block;
+            background: #111;
+            color: #fff;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 99px;
+            margin-bottom: 0;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, max-height 0.3s, margin-bottom 0.3s, padding 0.3s;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .pb-badge.show {
+            opacity: 1;
+            max-height: 40px;
+            margin-bottom: 18px;
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
+
+        .modal-btn {
+            background: #111;
+            color: #fff;
+            border: none;
+            font-size: 0.88rem;
+            font-weight: 700;
+            padding: 13px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.12s;
+            margin-top: 20px;
+        }
+
+        .modal-btn:hover {
+            opacity: 0.75;
+        }
+
+        /* ─── Split chart ─── */
+        .split-chart {
+            text-align: left;
+        }
+
+        .split-chart-title {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+            margin-bottom: 10px;
+        }
+
+        /* FIX: chart wrapper scrolls horizontally when bars are too dense (7×7) */
+        .split-bars-wrap {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 4px;
+        }
+
+        .split-bars {
+            display: flex;
+            align-items: flex-end;
+            /* FIX: each bar has a minimum width so they're always readable */
+            gap: 3px;
+            /* FIX: fixed height only on the bar area — labels live below separately */
+            height: 64px;
+            /* minimum width so bars don't squish below readable size */
+            min-width: min-content;
+        }
+
+        /* FIX: bar-wrap only contains the bar itself, not the label */
+        .split-bar-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            /* FIX: each bar column has a min width of 8px so they never disappear */
+            min-width: 8px;
+            flex: 1;
+            height: 100%;
+        }
+
+        .split-bar {
+            width: 100%;
+            border-radius: 2px 2px 0 0;
+            background: #e0e0e0;
+            /* no min-height — JS animates from 0% so CSS must not override that */
+        }
+
+        .split-bar.is-slowest {
+            background: #111;
+        }
+
+        .split-bar.is-fastest {
+            background: #888;
+        }
+
+        /* FIX: numbers row sits below the bar chart as a separate flex row */
+        .split-nums {
+            display: flex;
+            gap: 3px;
+            min-width: min-content;
+            margin-top: 3px;
+        }
+
+        .split-num-cell {
+            min-width: 8px;
+            flex: 1;
+            font-size: 0.5rem;
+            font-weight: 700;
+            color: #ccc;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .split-num-cell.is-slowest {
+            color: #111;
+        }
+
+        .split-num-cell.is-fastest {
+            color: #777;
+        }
+
+        .split-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.63rem;
+            color: #999;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .split-legend b {
+            color: #111;
+        }
+
+        @media (max-width: 520px) {
+            .modal {
+                padding: 28px 20px 24px;
+            }
+
+            .modal-stats {
+                gap: 20px;
+            }
+
+            .mode-cards {
+                flex-wrap: wrap;
+            }
+
+            .mode-card {
+                min-width: calc(50% - 4px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Schulte Table</h1>
+        <p class="subtitle">Click numbers in ascending order as fast as you can</p>
+    </header>
+
+    <div class="controls">
+        <div class="ctrl-group">
+            <div class="ctrl-label">Grid Size</div>
+            <div class="size-buttons">
+                <button class="size-btn" data-size="3">3×3</button>
+                <button class="size-btn active" data-size="4">4×4</button>
+                <button class="size-btn" data-size="5">5×5</button>
+                <button class="size-btn" data-size="6">6×6</button>
+                <button class="size-btn" data-size="7">7×7</button>
+            </div>
+        </div>
+        <div class="ctrl-group" style="align-items:flex-end">
+            <div class="ctrl-label">Time</div>
+            <div id="timer">00:00.0</div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-label">Find next</span>
+            <span class="stat-value" id="next-num">—</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Remaining</span>
+            <span class="stat-value" id="remaining">—</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Mistakes</span>
+            <span class="stat-value" id="mistake-count">0</span>
+        </div>
+    </div>
+
+    <div class="board-wrap">
+        <div class="board-aspect">
+            <div id="grid"></div>
+        </div>
+    </div>
+
+    <div class="progress-track">
+        <div id="progress-bar"></div>
+    </div>
+
+    <div class="mode-section">
+        <div class="section-label">Game Mode</div>
+        <div class="mode-cards">
+            <div class="mode-card active" data-mode="normal">
+                <div class="mode-card-title">Normal</div>
+                <div class="mode-card-desc">No shuffling. Standard play.</div>
+            </div>
+            <div class="mode-card" data-mode="shuffle">
+                <div class="mode-card-title">Shuffle</div>
+                <div class="mode-card-desc">Board reshuffles on each correct click.</div>
+            </div>
+            <div class="mode-card" data-mode="chaos">
+                <div class="mode-card-title">Chaos</div>
+                <div class="mode-card-desc">Board reshuffles on every click, right or wrong.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="options-row">
+        <div class="opt-toggle on" id="opt-color">
+            <span class="opt-toggle-label">Color feedback</span>
+            <span class="pill"></span>
+        </div>
+        <div class="opt-toggle on" id="opt-hide">
+            <span class="opt-toggle-label">Hide on click</span>
+            <span class="pill"></span>
+        </div>
+    </div>
+
+    <div class="best-times">
+        <div class="best-times-header">
+            <div class="best-times-title">Best Times</div>
+            <button class="clear-btn" id="clear-btn">Clear</button>
+        </div>
+        <div class="best-times-row" id="best-times-row"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon">🎉</div>
+            <div class="modal-title">Finished!</div>
+            <div class="modal-sub" id="modal-sub">4×4 · normal</div>
+            <div class="modal-stats">
+                <div class="m-stat">
+                    <span class="m-stat-label">Time</span>
+                    <span class="m-stat-value" id="modal-time">—</span>
+                </div>
+                <div class="m-stat">
+                    <span class="m-stat-label">Mistakes</span>
+                    <span class="m-stat-value" id="modal-mistakes">—</span>
+                </div>
+            </div>
+            <div class="pb-badge" id="pb-badge">🏆 New Best Time</div>
+            <div class="split-chart" id="split-chart"></div>
+            <button class="modal-btn" id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        /* ─── State ─── */
+        let currentSize = 4;
+        let currentMode = 'normal';
+        let nextExpected = 1;
+        let total = 0;
+        let mistakes = 0;
+        let running = false;
+        let timerInterval = null;
+        let startTime = 0;
+        // FIX: declared here, assigned to startTime (not a new performance.now()) in startGame
+        let lastClickTime = 0;
+        let clickSplits = [];
+        let wrongTimers = {};
+        let chaosTimer = null;  // single shared timer for chaos reshuffles — prevents double-reshuffle on rapid clicks
+        let useColor = true;
+        let useHide = true;
+        const bestTimes = (() => {
+            try {
+                const saved = localStorage.getItem('schulte_bestTimes');
+                return saved ? JSON.parse(saved) : { 3: null, 4: null, 5: null, 6: null, 7: null };
+            } catch { return { 3: null, 4: null, 5: null, 6: null, 7: null }; }
+        })();
+
+        function saveBestTimes() {
+            try { localStorage.setItem('schulte_bestTimes', JSON.stringify(bestTimes)); } catch { }
+        }
+
+        /* ─── Refs ─── */
+        const gridEl = document.getElementById('grid');
+        const timerEl = document.getElementById('timer');
+        const nextNumEl = document.getElementById('next-num');
+        const remainingEl = document.getElementById('remaining');
+        const mistakeEl = document.getElementById('mistake-count');
+        const progressBar = document.getElementById('progress-bar');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTime = document.getElementById('modal-time');
+        const modalMistakes = document.getElementById('modal-mistakes');
+        const modalSub = document.getElementById('modal-sub');
+        const pbBadge = document.getElementById('pb-badge');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const btRow = document.getElementById('best-times-row');
+        const optColor = document.getElementById('opt-color');
+        const optHide = document.getElementById('opt-hide');
+        const splitChartEl = document.getElementById('split-chart');
+
+        /* ─── Option toggles ─── */
+        optColor.addEventListener('click', () => {
+            useColor = !useColor;
+            optColor.classList.toggle('on', useColor);
+        });
+        optHide.addEventListener('click', () => {
+            useHide = !useHide;
+            optHide.classList.toggle('on', useHide);
+        });
+
+        /* ─── Timer ─── */
+        function fmt(ms) {
+            const m = Math.floor(ms / 60000);
+            const s = Math.floor((ms % 60000) / 1000);
+            const t = Math.floor((ms % 1000) / 100);
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${t}`;
+        }
+        function startTimer() {
+            startTime = performance.now();
+            running = true;
+            timerInterval = setInterval(() => {
+                timerEl.textContent = fmt(Math.floor(performance.now() - startTime));
+            }, 50);
+        }
+        function stopTimer() {
+            clearInterval(timerInterval);
+            running = false;
+            return Math.floor(performance.now() - startTime);
+        }
+
+        /* ─── Fisher-Yates ─── */
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        /* ─── Clear all pending wrong-flash timeouts ─── */
+        function clearWrongFlashes() {
+            Object.entries(wrongTimers).forEach(([id, tid]) => {
+                clearTimeout(tid);
+                const cell = gridEl.querySelector(`[data-cell-id="${id}"]`);
+                if (cell) cell.classList.remove('wrong-flash');
+            });
+            wrongTimers = {};
+            // Also kill any pending chaos reshuffle so it can't fire after we've moved on
+            if (chaosTimer) { clearTimeout(chaosTimer); chaosTimer = null; }
+        }
+
+        /* ─── Apply visual to a correct cell ─── */
+        function styleCorrectCell(cell) {
+            if (useHide) {
+                cell.classList.add('cell-hidden');
+            } else if (useColor) {
+                cell.classList.add('correct-color');
+            }
+        }
+
+        /* ─── Reshuffle un-clicked cells ─── */
+        function reshuffleBoard() {
+            clearWrongFlashes();
+            const cells = [...gridEl.querySelectorAll('.cell:not([data-clicked])')];
+            if (cells.length < 2) return;
+            const nums = shuffle(cells.map(c => parseInt(c.dataset.num)));
+            cells.forEach((cell, i) => {
+                const n = nums[i];
+                cell.dataset.num = n;
+                cell.textContent = n;
+                cell.onclick = () => handleClick(cell, n);
+            });
+        }
+
+        /* ─── Build grid ─── */
+        function buildGrid(size) {
+            gridEl.innerHTML = '';
+            gridEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            gridEl.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+            let cellId = 0;
+            shuffle([...Array(size * size)].map((_, i) => i + 1)).forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = num;
+                cell.dataset.num = num;
+                cell.dataset.cellId = cellId++;
+                cell.onclick = () => handleClick(cell, num);
+                gridEl.appendChild(cell);
+            });
+        }
+
+        /* ─── Click handler ─── */
+        function handleClick(cell, num) {
+            if (!running || cell.hasAttribute('data-clicked')) return;
+            const id = cell.dataset.cellId;
+
+            if (num === nextExpected) {
+                // Cancel any pending wrong-flash on this cell first
+                if (wrongTimers[id]) {
+                    clearTimeout(wrongTimers[id]);
+                    delete wrongTimers[id];
+                    cell.classList.remove('wrong-flash');
+                }
+
+                cell.setAttribute('data-clicked', '1');
+                styleCorrectCell(cell);
+
+                // FIX: record split using performance.now() directly — consistent with lastClickTime
+                const now = performance.now();
+                clickSplits.push(Math.round(now - lastClickTime));
+                lastClickTime = now;
+
+                nextExpected++;
+                const done = nextExpected - 1;
+                progressBar.style.width = `${(done / total) * 100}%`;
+                remainingEl.textContent = total - done;
+
+                if (done === total) {
+                    const elapsed = stopTimer();
+                    timerEl.textContent = fmt(elapsed);
+                    nextNumEl.textContent = '✓';
+                    remainingEl.textContent = '0';
+                    showModal(elapsed);
+                } else {
+                    nextNumEl.textContent = nextExpected;
+                    if (currentMode === 'shuffle' || currentMode === 'chaos') reshuffleBoard();
+                }
+
+            } else {
+                mistakes++;
+                mistakeEl.textContent = mistakes;
+                mistakeEl.classList.add('has-mistakes');
+
+                if (useColor) {
+                    // Bug 3 fix: cancel existing timer BEFORE restarting animation
+                    if (wrongTimers[id]) {
+                        clearTimeout(wrongTimers[id]);
+                        delete wrongTimers[id];
+                    }
+                    cell.classList.remove('wrong-flash');
+                    void cell.offsetWidth;
+                    cell.classList.add('wrong-flash');
+
+                    if (currentMode === 'chaos') {
+                        // Bug 2 fix: one shared chaosTimer so rapid wrong clicks don't stack reshuffles
+                        if (chaosTimer) clearTimeout(chaosTimer);
+                        wrongTimers[id] = setTimeout(() => {
+                            cell.classList.remove('wrong-flash');
+                            delete wrongTimers[id];
+                        }, 300);
+                        chaosTimer = setTimeout(() => {
+                            chaosTimer = null;
+                            reshuffleBoard();
+                        }, 320); // slightly after flash clears
+                    } else {
+                        wrongTimers[id] = setTimeout(() => {
+                            cell.classList.remove('wrong-flash');
+                            delete wrongTimers[id];
+                        }, 500);
+                    }
+                } else {
+                    if (currentMode === 'chaos') {
+                        // Bug 2 fix: also debounce the no-color chaos path
+                        if (chaosTimer) clearTimeout(chaosTimer);
+                        chaosTimer = setTimeout(() => {
+                            chaosTimer = null;
+                            reshuffleBoard();
+                        }, 50);
+                    }
+                }
+            }
+        }
+
+        /* ─── Split chart ─── */
+        function renderSplitChart(splits) {
+            splitChartEl.innerHTML = '';
+            if (!splits.length) return;
+
+            const maxMs = Math.max(...splits);
+            const minMs = Math.min(...splits);
+            const slowIdx = splits.indexOf(maxMs);
+            const fastIdx = splits.indexOf(minMs);
+
+            const title = document.createElement('div');
+            title.className = 'split-chart-title';
+            title.textContent = 'Time per number (seconds)';
+            splitChartEl.appendChild(title);
+
+            // FIX: wrap both rows in a scrollable container
+            const wrap = document.createElement('div');
+            wrap.className = 'split-bars-wrap';
+
+            // ── Bar row ──
+            const barsRow = document.createElement('div');
+            barsRow.className = 'split-bars';
+
+            // ── Number label row ──
+            const numsRow = document.createElement('div');
+            numsRow.className = 'split-nums';
+
+            splits.forEach((ms, i) => {
+                const pct = maxMs > 0 ? (ms / maxMs) * 100 : 100;
+                const isSlowest = i === slowIdx;
+                const isFastest = i === fastIdx && splits.length > 1;
+
+                // Bar column
+                const barWrap = document.createElement('div');
+                barWrap.className = 'split-bar-wrap';
+
+                const bar = document.createElement('div');
+                bar.className = 'split-bar' +
+                    (isSlowest ? ' is-slowest' : '') +
+                    (isFastest ? ' is-fastest' : '');
+
+                // Use % throughout so CSS can interpolate — mixing px and % breaks transitions
+                bar.style.height = '0%';
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        bar.style.transition = `height 0.45s ease ${i * 15}ms`;
+                        bar.style.height = `${pct}%`;
+                    });
+                });
+
+                barWrap.appendChild(bar);
+                barsRow.appendChild(barWrap);
+
+                // Number label column
+                const numCell = document.createElement('div');
+                numCell.className = 'split-num-cell' +
+                    (isSlowest ? ' is-slowest' : '') +
+                    (isFastest ? ' is-fastest' : '');
+                numCell.textContent = i + 1;
+                numsRow.appendChild(numCell);
+            });
+
+            wrap.appendChild(barsRow);
+            wrap.appendChild(numsRow);
+            splitChartEl.appendChild(wrap);
+
+            const legend = document.createElement('div');
+            legend.className = 'split-legend';
+            legend.innerHTML =
+                `<span>Slowest: <b>#${slowIdx + 1}</b> (${(maxMs / 1000).toFixed(1)}s)</span>` +
+                (splits.length > 1
+                    ? `<span>Fastest: <b>#${fastIdx + 1}</b> (${(minMs / 1000).toFixed(1)}s)</span>`
+                    : '');
+            splitChartEl.appendChild(legend);
+        }
+
+        /* ─── Win modal ─── */
+        function showModal(elapsed) {
+            const isPB = bestTimes[currentSize] === null || elapsed < bestTimes[currentSize];
+            if (isPB) {
+                bestTimes[currentSize] = elapsed;
+                saveBestTimes();
+            }
+            modalTime.textContent = fmt(elapsed);
+            modalMistakes.textContent = mistakes;
+            modalSub.textContent = `${currentSize}×${currentSize} · ${currentMode} mode`;
+            pbBadge.classList.toggle('show', isPB);
+            renderSplitChart(clickSplits);
+            modalOverlay.classList.add('show');
+            renderBestTimes();
+        }
+
+        /* ─── Best times ─── */
+        function renderBestTimes() {
+            btRow.innerHTML = '';
+            [3, 4, 5, 6, 7].forEach(size => {
+                const card = document.createElement('div');
+                card.className = 'bt-card' + (size === currentSize ? ' current' : '');
+                const t = bestTimes[size];
+                card.innerHTML = `
+        <div class="bt-size">${size}×${size}</div>
+        <div class="bt-time${t === null ? ' empty' : ''}">${t !== null ? fmt(t) : '—'}</div>`;
+                btRow.appendChild(card);
+            });
+        }
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (!confirm('Clear all best times?')) return;
+            [3, 4, 5, 6, 7].forEach(s => bestTimes[s] = null);
+            saveBestTimes();
+            renderBestTimes();
+        });
+
+        /* ─── Size buttons ─── */
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentSize = parseInt(btn.dataset.size);
+                startGame();
+            });
+        });
+
+        /* ─── Mode cards ─── */
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                currentMode = card.dataset.mode;
+                startGame();
+            });
+        });
+
+        playAgainBtn.addEventListener('click', startGame);
+
+        /* ─── Start game ─── */
+        function startGame() {
+            clearInterval(timerInterval);
+            clearWrongFlashes(); // cancels wrongTimers and chaosTimer
+            running = false;
+            mistakes = 0;
+            nextExpected = 1;
+            total = currentSize * currentSize;
+            clickSplits = [];
+
+            timerEl.textContent = '00:00.0';
+            nextNumEl.textContent = '1';
+            remainingEl.textContent = total;
+            mistakeEl.textContent = '0';
+            mistakeEl.classList.remove('has-mistakes');
+            progressBar.style.width = '0%';
+            modalOverlay.classList.remove('show');
+
+            buildGrid(currentSize);
+            renderBestTimes();
+            startTimer();
+
+            // FIX: sync lastClickTime to startTime so split #1 matches
+            // what the timer actually measured from
+            lastClickTime = startTime;
+        }
+
+        renderBestTimes();
+        startGame();
+    </script>
+</body>
+
+</html>
